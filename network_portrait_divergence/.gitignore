@@ -1,0 +1,10 @@
+.DS_Store
+not_needed
+old
+data
+research
+test_files
+__pycache__
+images
+csv_files
+output.csv
