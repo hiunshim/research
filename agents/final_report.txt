@@ -1,0 +1,92 @@
+In this final report, I will refer to the retailer as our "client" and the users of the retailer as "customers" for our client.
+
+### Testing and Reliability
+There's a counter (in-memory for the purposes of this assignment) that tracks how many times an agent is used.
+We have a main agent that's supposed to take care of unknown "intents" that other agents cannot handle.
+If the usage of this fallback agent increases dramatically, we know the following:
+1. The customers of our client are asking our agent to handle a request it cannot handle. So we'll know what feature to implement next.
+2. Our project isn't handling the known scenarios properly, so there must be a bug or the prompts aren't good enough.
+3. Someone is maliciously interacting with our agent, and we'll need to ensure those malicious events are handled properly.
+We can flag the inputs that routed the intent to the fallback agent to see if it should've been handled by a different agent.
+With more time it would be interesting to see if we can setup a manager agent that observes the customer and agent interaction to see if it was handled properly.
+That way, we reduce the number of manual monitoring and just look at the aggregates that the manager agent flagged.
+
+In summary, we should monitor:
+1. Agent usage counter
+2. User inputs and agent responses
+3. A graph to show the agent traffic (which routes to which)
+4. Speed of the overall interaction
+5. Customer satisfaction
+
+and setup alert for:
+1. Increase of fallback agent usage (we'll flag input, agent, prompt)
+2. Increase of API calls (malicious intent from an attacker)
+3. Increase of downstream services errors (e.g., OpenAI API, DB query, Authorization, Internationalization, etc)
+4. Increase in speed of the handles
+5. Decrease in customer satisfaction
+
+
+### Evaluation and Customer Success
+Number of successful requests divided by the total number of requests is the general success metric.
+Following that strategy, we can add up the total number of known agent handles, and divide by the number of total handles (unknown + known).
+In production, we'll want another layer of final fallback to route the customer to the old way of how our clients used to handle customer support.
+Since our clients would want to reduce the number of manual customer support as much as possible, we'll compare the number of manual requests they had to handle before and after the agent integration.
+
+Speed and customer satisfaction are also important and probably correlated.
+We'll want to decrese the time it takes our client to resolve the customer support.
+We can run a quick survey after the support, but based on my experience, automated surveys are difficult to get data from.
+Running sentiment analysis on the customer inputs will let us know the overall satisfaction if the surveys are insufficient.
+
+
+### Customer Prioritization
+Based on the context, the list below is the features sorted based on their priority:
+1. (Completed) Order Status and Tracking
+2. (Completed) Product Availability
+3. (Completed) Product Recommendations
+4. Hiking Recommendations
+5. Early Risers Promotion
+6. Multilingual Support
+
+Context and assumptions:
+  - Our client is preparing for peak seasonal traffic in which they see significant increases in inbounds and product issues. 
+  - They are an "emerging" retailer.
+  - Most retailers like REI and Sports Basement usually offer 10% with membership.
+  - Avid mountaineers rarely look for hiking recommendations on a retailer platform.
+  - It's unlikely that they have internationalization support on their website already to be paired with our agent.
+  - Our client offering a promotion is written in present tense so it's likely that they already have that infrastructure.
+
+We need more information on:
+  - Customer profiles (is our client targeting professionals aware of other retailers, or beginners just getting started with their outdoor hobby?)
+  - Is our client a distributed company concentrated in a Spanish speaking region?
+  - How how much more profit would they have with the promotion?
+  - Does our client already have the infrastructure set up to give promotions, or is that an infrastructure that we set up for them?
+
+For the first three features, we can think of them as a dependency graph.
+The first is required and it's crucial that we be able to find a customer's order since they came to the website to either, (1) see when their order is arriving, or (2) purchase something.
+We need to know what product is available to even give a recommendation about a product in the inventory.
+
+There aren't many advantages for our client to answer questions about the cutomer's hike if we can't recommend a product to a customer for their upcoming hike.
+But being able to explain what products they would need for a hike, and how to use the product during the hike depending on the conditions can be useful and differentiate them from our retailers.
+
+Without knowing how much the promotion will profit our client, it's difficult to prioritize.
+We could assume that it makes sense for them if they already have this feature and if so, we should prioritize integrating existing features.
+If they don't, engineering a promotion code infrastructure is a heavy investment unless the retailer has already set it up for us to integrate with.
+Depending on our client's customer profiles, this can have higher priority if the customers already know what they're looking for.
+Another reason to deprioritize this is because from an engineering point of view, this feature could be simplified.
+Instead of generating a unique code every time, anyone could use "early riser" as the promo code during a set time period, and reject the promo code outside of that time period, unless the client wants to let the customers use a promo code at any time once they're generated.
+
+Finally, we need to have most of the features to even provide multilingual "support".
+
+
+### Notes
+In the context of this assignment, it could've been sufficient to have one agent that handles all user inquiries.
+While considering the time limit, I've purposely overengineered it because in production, that won't scale.
+The model's output quality drops with 10+ functions and determining which function to call will become inaccurate when using function calling.
+We need to modularize each intent so that each agent can have <10 functions they can execute.
+It's also very difficult to maintain and test as developers if there's no modularity.
+
+Also, we won't be able to feed in an entire JSON data in real scenarios.
+It would be stored in a separate storage and we would query it optimally.
+I've skipped this step because we would've had to initialize the DB and parse the JSON to fit it into the DB, then write query functions.
+Writing the DB query functions and testing them would take at least an hour, and not what the assignment wants to see.
+
